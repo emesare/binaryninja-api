@@ -11850,6 +11850,7 @@ namespace BinaryNinja {
 		std::set<size_t> GetSSAMemoryUses(size_t version) const;
 		bool IsSSAVarLive(const SSAVariable& var) const;
 
+        std::set<size_t> GetVariableSSAVersions(const Variable& var) const;
 		std::set<size_t> GetVariableDefinitions(const Variable& var) const;
 		std::set<size_t> GetVariableUses(const Variable& var) const;
 
