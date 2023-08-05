@@ -86,26 +86,26 @@ void HighLevelILFunction::SetRootExpr(const HighLevelILInstruction& expr)
 
 
 ExprId HighLevelILFunction::AddExpr(
-    BNHighLevelILOperation operation, size_t size, ExprId a, ExprId b, ExprId c, ExprId d, ExprId e)
+	BNHighLevelILOperation operation, size_t size, ExprId a, ExprId b, ExprId c, ExprId d, ExprId e)
 {
 	return BNHighLevelILAddExpr(m_object, operation, size, a, b, c, d, e);
 }
 
 
 ExprId HighLevelILFunction::AddExprWithLocation(BNHighLevelILOperation operation, uint64_t addr, uint32_t sourceOperand,
-    size_t size, ExprId a, ExprId b, ExprId c, ExprId d, ExprId e)
+	size_t size, ExprId a, ExprId b, ExprId c, ExprId d, ExprId e)
 {
 	return BNHighLevelILAddExprWithLocation(m_object, operation, addr, sourceOperand, size, a, b, c, d, e);
 }
 
 
 ExprId HighLevelILFunction::AddExprWithLocation(BNHighLevelILOperation operation, const ILSourceLocation& loc,
-    size_t size, ExprId a, ExprId b, ExprId c, ExprId d, ExprId e)
+	size_t size, ExprId a, ExprId b, ExprId c, ExprId d, ExprId e)
 {
 	if (loc.valid)
 	{
 		return BNHighLevelILAddExprWithLocation(
-		    m_object, operation, loc.address, loc.sourceOperand, size, a, b, c, d, e);
+			m_object, operation, loc.address, loc.sourceOperand, size, a, b, c, d, e);
 	}
 	return BNHighLevelILAddExpr(m_object, operation, size, a, b, c, d, e);
 }
@@ -341,6 +341,19 @@ bool HighLevelILFunction::IsVarLiveAt(const Variable& var, const size_t instr) c
 }
 
 
+set<size_t> HighLevelILFunction::GetVariableSSAVersions(const Variable& var) const
+{
+	size_t count;
+	size_t* versions = BNGetHighLevelILVariableSSAVersions(m_object, &var, &count);
+
+	set<size_t> result;
+	for (size_t i = 0; i < count; i++)
+		result.insert(versions[i]);
+
+	return result;
+}
+
+
 set<size_t> HighLevelILFunction::GetVariableDefinitions(const Variable& var) const
 {
 	size_t count;
@@ -457,7 +470,7 @@ vector<DisassemblyTextLine> HighLevelILFunction::GetExprText(ExprId expr, bool a
 {
 	size_t count;
 	BNDisassemblyTextLine* lines =
-	    BNGetHighLevelILExprText(m_object, expr, asFullAst, &count, settings ? settings->GetObject() : nullptr);
+		BNGetHighLevelILExprText(m_object, expr, asFullAst, &count, settings ? settings->GetObject() : nullptr);
 
 	vector<DisassemblyTextLine> result;
 	result.reserve(count);
@@ -478,14 +491,14 @@ vector<DisassemblyTextLine> HighLevelILFunction::GetExprText(ExprId expr, bool a
 
 
 vector<DisassemblyTextLine> HighLevelILFunction::GetExprText(
-    const HighLevelILInstruction& instr, bool asFullAst, DisassemblySettings* settings)
+	const HighLevelILInstruction& instr, bool asFullAst, DisassemblySettings* settings)
 {
 	return GetExprText(instr.exprIndex, asFullAst, settings);
 }
 
 
 vector<DisassemblyTextLine> HighLevelILFunction::GetInstructionText(
-    size_t i, bool asFullAst, DisassemblySettings* settings)
+	size_t i, bool asFullAst, DisassemblySettings* settings)
 {
 	HighLevelILInstruction instr = GetInstruction(i);
 	return GetExprText(instr, asFullAst, settings);
