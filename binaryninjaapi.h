@@ -12163,6 +12163,7 @@ namespace BinaryNinja {
 		bool IsSSAVarLiveAt(const SSAVariable& var, const size_t instr) const;
 		bool IsVarLiveAt(const Variable& var, const size_t instr) const;
 
+        std::set<size_t> GetVariableSSAVersions(const Variable& var) const;
 		std::set<size_t> GetVariableDefinitions(const Variable& var) const;
 		std::set<size_t> GetVariableUses(const Variable& var) const;
 		size_t GetSSAVarVersionAtInstruction(const Variable& var, size_t instr) const;
