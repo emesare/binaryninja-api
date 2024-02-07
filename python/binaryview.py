@@ -43,8 +43,7 @@ from . import _binaryninjacore as core
 from . import decorators
 from .enums import (
     AnalysisState, SymbolType, Endianness, ModificationStatus, StringType, SegmentFlag, SectionSemantics, FindFlag,
-    TypeClass, BinaryViewEventType, FunctionGraphType, TagReferenceType, TagTypeType, RegisterValueType, LogLevel,
-	DisassemblyOption
+    TypeClass, BinaryViewEventType, FunctionGraphType, TagReferenceType, TagTypeType, RegisterValueType, DisassemblyOption
 )
 from .exceptions import RelocationWriteException, ILException
 
@@ -68,6 +67,7 @@ from . import mediumlevelil
 from . import highlevelil
 from . import debuginfo
 from . import flowgraph
+from . import project
 # The following are imported as such to allow the type checker disambiguate the module name
 # from properties and methods of the same name
 from . import workflow as _workflow
@@ -76,6 +76,9 @@ from . import types as _types
 from . import platform as _platform
 from . import deprecation
 from . import typecontainer
+from . import externallibrary
+from . import project
+
 
 PathType = Union[str, os.PathLike]
 InstructionsType = Generator[Tuple[List['_function.InstructionTextToken'], int], None, None]
@@ -2322,7 +2325,7 @@ class BinaryView:
 		return BinaryView(file_metadata=file_metadata, handle=view)
 
 	@staticmethod
-	def load(source: Union[str, bytes, bytearray, 'databuffer.DataBuffer', 'os.PathLike', 'BinaryView'], update_analysis: Optional[bool] = True,
+	def load(source: Union[str, bytes, bytearray, 'databuffer.DataBuffer', 'os.PathLike', 'BinaryView', 'project.ProjectFile'], update_analysis: Optional[bool] = True,
 	    progress_func: Optional[ProgressFuncType] = None, options: Mapping[str, Any] = {}) -> Optional['BinaryView']:
 		"""
 		``load`` opens, generates default load options (which are overridable), and returns the first available \
@@ -2371,6 +2374,8 @@ class BinaryView:
 			source = str(source)
 		if isinstance(source, BinaryView):
 			handle = core.BNLoadBinaryView(source.handle, update_analysis, progress_cfunc, metadata.Metadata(options).handle, source.file.has_database)
+		elif isinstance(source, project.ProjectFile):
+			handle = core.BNLoadProjectFile(source._handle, update_analysis, progress_cfunc, metadata.Metadata(options).handle)
 		elif isinstance(source, str):
 			handle = core.BNLoadFilename(source, update_analysis, progress_cfunc, metadata.Metadata(options).handle)
 		elif isinstance(source, bytes) or isinstance(source, bytearray) or isinstance(source, databuffer.DataBuffer):
@@ -2950,6 +2955,14 @@ class BinaryView:
 	@new_auto_function_analysis_suppressed.setter
 	def new_auto_function_analysis_suppressed(self, suppress: bool) -> None:
 		core.BNSetNewAutoFunctionAnalysisSuppressed(self.handle, suppress)
+
+	@property
+	def project(self) -> Optional['project.Project']:
+		return self.file.project
+
+	@property
+	def project_file(self) -> Optional['project.ProjectFile']:
+		return self.file.project_file
 
 	def _init(self, ctxt):
 		try:
@@ -4413,7 +4426,7 @@ class BinaryView:
 
 		.. note:: Note that `get_code_refs` returns xrefs to code that references the address being queried. \
 		`get_data_refs` on the other hand returns references that exist in data (pointers in global variables for example). \
-		The related :py:func:`get_refs_from` looks for references that are outgoing from the queried address to other locations.
+		The related :py:func:`get_code_refs_from` looks for references that are outgoing from the queried address to other locations.
 
 		:param int addr: virtual address to query for references
 		:param int length: optional length of query
@@ -4488,7 +4501,7 @@ class BinaryView:
 
 		.. warning:: If you're looking at this API, please double check that you don't mean to use :py:func:`get_code_refs` instead. \
 		`get_code_refs` returns references from code to the specified address while this API returns references from data \
-		(pointers in global variables for example).
+        (pointers in global variables for example). Also, note there exists :py:func:`get_data_refs_from`.
 
 		:param int addr: virtual address to query for references
 		:param int length: optional length of query
@@ -4519,7 +4532,7 @@ class BinaryView:
 		``get_data_refs_from`` returns a list of virtual addresses referenced by the address ``addr``. Optionally specifying
 		a length. When ``length`` is set ``get_data_refs_from`` returns the data referenced in the range ``addr``-``addr``+``length``.
 		This function returns both autoanalysis ("auto") and user-specified ("user") xrefs. To add a user-specified
-		reference, see :py:func:`add_user_data_ref`.
+        reference, see :py:func:`add_user_data_ref`. Also, note there exists :py:func:`get_data_refs`.
 
 		:param int addr: virtual address to query for references
 		:param int length: optional length of query
@@ -5979,6 +5992,25 @@ class BinaryView:
 		tag_type = self.get_tag_type(tag_type)
 		if tag_type is not None:
 			core.BNRemoveAutoDataTagsOfType(self.handle, addr, tag_type.handle)
+
+	def check_for_string_annotation_type(self, addr: int, allow_short_strings: bool = False, allow_large_strings: bool = False, child_width: int = 0) -> Optional[Tuple[str, StringType]]:
+		"""
+		Check for string annotation at a given address. This returns the string (and type of the string) as annotated in the UI at a given address. If there's no annotation, this function returns `None`.
+
+		:param int addr: address at which to check for string annotation
+		:param bool allow_short_strings: Allow string shorter than the `analysis.limits.minStringLength` setting
+		:param bool allow_large_strings: Allow strings longer than the `rendering.strings.maxAnnotationLength` setting (up to `analysis.limits.maxStringLength`)
+		:param int child_width: What width of strings to look for, 1 for ASCII/UTF8, 2 for UTF16, 4 for UTF32, 0 to check for all
+		:rtype: None
+		"""
+		value = ctypes.c_char_p()
+		string_type = ctypes.c_int()
+		result = core.BNCheckForStringAnnotationType(self.handle, addr, value, string_type, allow_short_strings, allow_large_strings, child_width)
+		if result:
+			result = value.value.decode("utf-8")
+			core.free_string(value)
+			return (result, StringType(string_type.value))
+		return None
 
 	def can_assemble(self, arch: Optional['architecture.Architecture'] = None) -> bool:
 		"""
@@ -7471,7 +7503,11 @@ class BinaryView:
 		if not isinstance(guid, str):
 			guid = str(guid)
 
-		tl = self.get_type_library("win32common")
+		if self.arch is None:
+			return None
+
+		tl_name = "winX64common" if self.arch.name == "x86_64" else "win32common"
+		tl = self.get_type_library(tl_name)
 		if tl is None:
 			return None
 
@@ -7482,7 +7518,7 @@ class BinaryView:
 			return None
 		return self.import_library_type(type_name, tl)
 
-	def import_library_object(self, name: str, lib: Optional[typelibrary.TypeLibrary] = None) -> Optional['_types.Type']:
+	def import_library_object(self, name: str, lib: Optional[typelibrary.TypeLibrary] = None) -> Optional[Tuple['typelibrary.TypeLibrary', '_types.Type']]:
 		"""
 		``import_library_object`` recursively imports an object from the specified type library, or, if \
 		no library was explicitly provided, the first type library associated with the current :py:class:`BinaryView` \
@@ -8646,6 +8682,69 @@ class BinaryView:
 
 	def create_logger(self, logger_name:str) -> Logger:
 		return Logger(self.file.session_id, logger_name)
+
+	def add_external_library(self, name: str, backing_file: Optional['project.ProjectFile'] = None, auto: bool = False) -> externallibrary.ExternalLibrary:
+		file_handle = None
+		if backing_file is not None:
+			file_handle = backing_file._handle
+		handle = core.BNBinaryViewAddExternalLibrary(self.handle, name, file_handle, auto)
+		assert handle is not None, "core.BNBinaryViewAddExternalLibrary returned None"
+		return externallibrary.ExternalLibrary(handle)
+
+	def remove_external_library(self, name: str):
+		core.BNBinaryViewRemoveExternalLibrary(self.handle, name)
+
+	def get_external_library(self, name: str) -> Optional[externallibrary.ExternalLibrary]:
+		handle = core.BNBinaryViewGetExternalLibrary(self.handle, name)
+		if handle is None:
+			return None
+		return externallibrary.ExternalLibrary(handle)
+
+	def get_external_libraries(self) -> List[externallibrary.ExternalLibrary]:
+		count = ctypes.c_ulonglong(0)
+		handles = core.BNBinaryViewGetExternalLibraries(self.handle, count)
+		assert handles is not None, "core.BNBinaryViewGetExternalLibraries returned None"
+		result = []
+		try:
+			for i in range(count.value):
+				new_handle = core.BNNewExternalLibraryReference(handles[i])
+				assert new_handle is not None, "core.BNNewExternalLibraryReference returned None"
+				result.append(externallibrary.ExternalLibrary(new_handle))
+			return result
+		finally:
+			core.BNFreeExternalLibraryList(handles, count.value)
+
+	def add_external_location(self, symbol: '_types.CoreSymbol', library: Optional[externallibrary.ExternalLibrary], external_symbol: Optional[str], external_address: Optional[int], auto: bool = False) -> externallibrary.ExternalLocation:
+		c_addr = None
+		if external_address is not None:
+			c_addr = ctypes.c_ulonglong(external_address)
+
+		handle = core.BNBinaryViewAddExternalLocation(self.handle, symbol.handle, library._handle if library else None, external_symbol, c_addr, auto)
+		assert handle is not None, "core.BNBinaryViewAddExternalLocation returned None"
+		return externallibrary.ExternalLocation(handle)
+
+	def remove_external_location(self, symbol: '_types.CoreSymbol'):
+		core.BNBinaryViewRemoveExternalLocation(self.handle, symbol._handle)
+
+	def get_external_location(self, symbol: '_types.CoreSymbol') -> Optional[externallibrary.ExternalLocation]:
+		handle = core.BNBinaryViewGetExternalLocation(self.handle, symbol.handle)
+		if handle is None:
+			return None
+		return externallibrary.ExternalLocation(handle)
+
+	def get_external_locations(self) -> List[externallibrary.ExternalLocation]:
+		count = ctypes.c_ulonglong(0)
+		handles = core.BNBinaryViewGetExternalLocations(self.handle, count)
+		assert handles is not None, "core.BNBinaryViewGetExternalLocations returned None"
+		result = []
+		try:
+			for i in range(count.value):
+				new_handle = core.BNNewExternalLocationReference(handles[i])
+				assert new_handle is not None, "core.BNNewExternalLocationReference returned None"
+				result.append(externallibrary.ExternalLocation(new_handle))
+			return result
+		finally:
+			core.BNFreeExternalLocationList(handles, count.value)
 
 
 class BinaryReader:

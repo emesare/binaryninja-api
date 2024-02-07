@@ -12,9 +12,10 @@
 #include <QtWidgets/QProgressBar>
 #include <QtWidgets/QToolButton>
 #include "binaryninjaapi.h"
-#include "dockhandler.h"
 #include "filter.h"
 #include "expandablegroup.h"
+#include "sidebar.h"
+#include "tabwidget.h"
 
 #define FIND_RESULT_LIST_UPDATE_INTERVAL 250
 #define COLUMN_MIN_WIDTH_IN_CHAR         10
@@ -183,6 +184,7 @@ class BINARYNINJAUIAPI SearchResultTable : public QTableView
 	BinaryNinja::FindParameters m_params;
 	UIActionHandler m_actionHandler;
 	QTimer* m_updateTimer;
+	bool m_ignoreColumnResize = true;
 
 	int m_charWidth, m_charHeight;
 
@@ -233,7 +235,7 @@ class SearchProgressBar;
 /*!
     \ingroup searchresult
 */
-class BINARYNINJAUIAPI SearchResultWidget : public QWidget
+class BINARYNINJAUIAPI SearchResultWidget : public SidebarWidget
 {
 	Q_OBJECT
 
@@ -253,10 +255,10 @@ class BINARYNINJAUIAPI SearchResultWidget : public QWidget
 	virtual void contextMenuEvent(QContextMenuEvent* event) override;
 
   public:
-	SearchResultWidget(BinaryViewRef data);
+	SearchResultWidget(BinaryViewRef data, const QString& title);
 	~SearchResultWidget();
 
-	void notifyFontChanged();
+	void notifyFontChanged() override;
 
 	void startNewFind(const BinaryNinja::FindParameters& params);
 	virtual QString getHeaderText();
@@ -271,7 +273,7 @@ class BINARYNINJAUIAPI SearchResultWidget : public QWidget
 	void terminateCacheThread();
 	bool isSearchActive() const;
 
-  public Q_SLOTS:
+public Q_SLOTS:
 	void updateTotal();
 };
 
@@ -298,4 +300,44 @@ class BINARYNINJAUIAPI SearchProgressBar : public QWidget
 	void reset();
 	void show();
 	bool isRunning() const { return m_running; }
+};
+
+/*!
+    \ingroup searchresult
+*/
+class BINARYNINJAUIAPI SearchResultHeaderWidget : public QWidget, public FilterTarget
+{
+	Q_OBJECT
+
+	QLineEdit* m_search;
+	QComboBox* m_mode;
+	ClickableIcon* m_caseSensitive;
+
+public:
+	SearchResultHeaderWidget();
+
+	virtual void setFilter(const std::string&) override {}
+	virtual void scrollToFirstItem() override {}
+	virtual void scrollToCurrentItem() override {}
+	virtual void selectFirstItem() override {}
+	virtual void activateFirstItem() override;
+
+protected:
+	virtual void keyPressEvent(QKeyEvent* e) override;
+};
+
+/*!
+    \ingroup searchresult
+*/
+class BINARYNINJAUIAPI SearchResultSidebarWidgetType : public SidebarWidgetType
+{
+public:
+	SearchResultSidebarWidgetType();
+	SidebarWidgetLocation defaultLocation() const override { return SidebarWidgetLocation::RightBottom; }
+	SidebarContextSensitivity contextSensitivity() const override { return PerViewTypeSidebarContext; }
+	bool alwaysShowTabs() const override { return true; }
+	virtual QString noWidgetMessage() const override { return "No search active"; }
+	virtual QWidget* headerWidget(SplitPaneWidget* panes, ViewFrame* frame, BinaryViewRef data) override;
+	virtual bool focusHeaderWidget() const override { return true; }
+	virtual DockableTabStyle* tabStyle() const override { return new DefaultDockableTabStyle(); }
 };

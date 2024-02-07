@@ -206,7 +206,7 @@ class BINARYNINJAUIAPI TypeBrowserModel : public QAbstractItemModel, public Bina
 	void commitUpdates(std::vector<TypeBrowserTreeNode::UpdateData>& updates);
 
 public:
-	TypeBrowserModel(BinaryViewRef data);
+	TypeBrowserModel(BinaryViewRef data, QObject* parent);
 	virtual ~TypeBrowserModel();
 	BinaryViewRef getData() { return m_data; }
 	std::shared_ptr<TypeBrowserTreeNode> getRootNode() { return m_rootNode; }
@@ -267,7 +267,7 @@ protected:
 	bool lessThan(const QModelIndex& source_left, const QModelIndex& source_right) const override;
 
 public:
-	TypeBrowserFilterModel(BinaryViewRef data, TypeBrowserModel* model);
+	TypeBrowserFilterModel(BinaryViewRef data, TypeBrowserModel* model, QObject* parent);
 
 	void setFilter(const std::string& filter);
 	TypeBrowserFilterMode filterMode() const { return m_filterMode; }
@@ -319,7 +319,6 @@ struct BINARYNINJAUIAPI TypeReference
 class BINARYNINJAUIAPI TypeBrowserView : public QFrame, public View, public FilterTarget
 {
 	Q_OBJECT
-	ViewFrame* m_frame;
 	BinaryViewRef m_data;
 	class TypeBrowserContainer* m_container;
 	ContextMenuManager* m_contextMenuManager;
@@ -342,7 +341,7 @@ class BINARYNINJAUIAPI TypeBrowserView : public QFrame, public View, public Filt
 	QTextEdit* m_debugText;
 
 public:
-	TypeBrowserView(ViewFrame* frame, BinaryViewRef data, TypeBrowserContainer* container);
+	TypeBrowserView(BinaryViewRef data, TypeBrowserContainer* container);
 
 	TypeBrowserContainer* getContainer() { return m_container; }
 	TypeBrowserModel* getModel() { return m_model; }
@@ -379,6 +378,8 @@ public:
 
 	bool navigateToType(const std::string& typeName, uint64_t offset);
 	void scrollToIndexWithContext(const QModelIndex& index, int context = 1);
+
+	void setPrimaryOrientation(Qt::Orientation orientation);
 
 	// Selection helpers
 
@@ -458,7 +459,6 @@ class BINARYNINJAUIAPI TypeBrowserContainer : public QWidget, public ViewContain
 {
 	Q_OBJECT
 
-	ViewFrame* m_frame;
 	BinaryViewRef m_data;
 	TypeBrowserView* m_view;
 	FilteredView* m_filter;
@@ -467,10 +467,9 @@ class BINARYNINJAUIAPI TypeBrowserContainer : public QWidget, public ViewContain
 	UIActionHandler m_actionHandler;
 
 public:
-	TypeBrowserContainer(ViewFrame* frame, BinaryViewRef data, class TypeBrowserSidebarWidget* parent);
+	TypeBrowserContainer(BinaryViewRef data, class TypeBrowserSidebarWidget* parent);
 	virtual View* getView() override { return m_view; }
 
-	ViewFrame* getViewFrame() { return m_frame; }
 	BinaryViewRef getData() { return m_data; }
 	TypeBrowserView* getTypeBrowserView() { return m_view; }
 	FilteredView* getFilter() { return m_filter; }
@@ -503,10 +502,11 @@ class BINARYNINJAUIAPI TypeBrowserSidebarWidget : public SidebarWidget
 	TypeBrowserContainer* m_container;
 
 public:
-	TypeBrowserSidebarWidget(ViewFrame* frame, BinaryViewRef data);
+	TypeBrowserSidebarWidget(BinaryViewRef data);
 	TypeBrowserContainer* container() { return m_container; }
 	virtual QWidget* headerWidget() override { return m_header; }
 	virtual void focus() override;
+	virtual void setPrimaryOrientation(Qt::Orientation orientation) override;
 
 protected:
 	virtual void contextMenuEvent(QContextMenuEvent* event) override;
@@ -521,4 +521,9 @@ class BINARYNINJAUIAPI TypeBrowserSidebarWidgetType : public SidebarWidgetType
 public:
 	TypeBrowserSidebarWidgetType();
 	virtual SidebarWidget* createWidget(ViewFrame* frame, BinaryViewRef data) override;
+
+	SidebarWidgetLocation defaultLocation() const override { return SidebarWidgetLocation::LeftContent; }
+	SidebarContextSensitivity contextSensitivity() const override { return PerViewTypeSidebarContext; }
+	virtual bool canUseAsPane(SplitPaneWidget*, BinaryViewRef) const override { return true; }
+	virtual Pane* createPane(SplitPaneWidget* panes, BinaryViewRef data) override;
 };

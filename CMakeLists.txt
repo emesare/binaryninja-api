@@ -35,9 +35,14 @@ target_link_libraries(binaryninjaapi PUBLIC ${BinaryNinjaCore_LIBRARIES})
 target_link_directories(binaryninjaapi PUBLIC ${BinaryNinjaCore_LIBRARY_DIRS})
 target_compile_definitions(binaryninjaapi PUBLIC ${BinaryNinjaCore_DEFINITIONS})
 
-add_subdirectory(vendor/fmt)
+add_subdirectory(vendor/fmt EXCLUDE_FROM_ALL)
 set_target_properties(fmt PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(binaryninjaapi PUBLIC fmt::fmt)
+
+if(APPLE)
+    find_library(CORE_SERVICES_LIBRARY NAMES CoreServices)
+    target_link_libraries(binaryninjaapi PRIVATE ${CORE_SERVICES_LIBRARY})
+endif()
 
 set_target_properties(binaryninjaapi PROPERTIES
     CXX_STANDARD 17

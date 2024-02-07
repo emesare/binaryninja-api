@@ -11,6 +11,7 @@
 #include <QtGui/QMouseEvent>
 #include "uitypes.h"
 #include "json/json.h"
+#include "splitter.h"
 
 
 class DockableTabWidget;
@@ -25,11 +26,12 @@ class DockableTabWidget;
 
     \ingroup tabwidget
 */
-class BINARYNINJAUIAPI DockableTabCollection
+class BINARYNINJAUIAPI DockableTabCollection : public QObject
 {
+	Q_OBJECT
 	std::set<DockableTabWidget*> m_containers;
 
-  public:
+public:
 	void registerContainer(DockableTabWidget* widget);
 	void unregisterContainer(DockableTabWidget* widget);
 
@@ -355,7 +357,7 @@ class BINARYNINJAUIAPI SplitTabWidget : public QWidget
 	Q_OBJECT
 
 	DockableTabWidget* m_tabs = nullptr;
-	QSplitter* m_splitter = nullptr;
+	Splitter* m_splitter = nullptr;
 	SplitTabWidget* m_first = nullptr;
 	SplitTabWidget* m_second = nullptr;
 	QVBoxLayout* m_layout;
@@ -378,11 +380,12 @@ class BINARYNINJAUIAPI SplitTabWidget : public QWidget
 	SplitTabWidget(DockableTabCollection* collection);
 
 	void addTab(QWidget* widget, const QString& title);
+	bool removeTab(QWidget* widget);
 	void setCanCloseTab(QWidget* widget, bool canClose);
 	void enumerateTabs(const std::function<void(QWidget*)>& func);
 	void selectWidget(QWidget* widget);
 	bool isWidgetVisible(QWidget* widget);
-	void closeTab(QWidget* widget);
+	bool closeTab(QWidget* widget);
 
 	void setTabStyle(DockableTabStyle* style);
 
@@ -395,6 +398,7 @@ class BINARYNINJAUIAPI SplitTabWidget : public QWidget
 	void tabClosed(QWidget* widget);
 	void currentChanged(QWidget* widget);
 	void layoutChanged();
+	void splitSizeChanged();
 
   private Q_SLOTS:
 	void tabCloseRequested(int idx);
