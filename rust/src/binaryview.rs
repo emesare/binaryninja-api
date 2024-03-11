@@ -186,7 +186,7 @@ pub trait BinaryViewExt: BinaryViewBase {
         unsafe {
             let raw = BNGetFileForView(self.as_ref().handle);
 
-            Ref::new(FileMetadata::from_raw(raw))
+            FileMetadata::ref_from_raw(raw)
         }
     }
 
@@ -202,7 +202,7 @@ pub trait BinaryViewExt: BinaryViewBase {
             return Err(());
         }
 
-        unsafe { Ok(BinaryView::from_raw(handle)) }
+        unsafe { Ok(BinaryView::ref_from_raw(handle)) }
     }
 
     fn raw_view(&self) -> Result<Ref<BinaryView>> {
@@ -215,7 +215,7 @@ pub trait BinaryViewExt: BinaryViewBase {
             return Err(());
         }
 
-        unsafe { Ok(BinaryView::from_raw(handle)) }
+        unsafe { Ok(BinaryView::ref_from_raw(handle)) }
     }
 
     fn view_type(&self) -> BnString {
@@ -1040,7 +1040,7 @@ pub trait BinaryViewExt: BinaryViewBase {
         if read_buffer.is_null() {
             Err(())
         } else {
-            Ok(DataBuffer::from_raw(read_buffer))
+            Ok(unsafe { DataBuffer::from_raw(read_buffer) })
         }
     }
 
@@ -1369,11 +1369,15 @@ impl<T: BinaryViewBase> BinaryViewExt for T {}
 
 #[derive(PartialEq, Eq, Hash)]
 pub struct BinaryView {
-    pub(crate) handle: *mut BNBinaryView,
+    pub handle: *mut BNBinaryView,
 }
 
 impl BinaryView {
-    pub(crate) unsafe fn from_raw(handle: *mut BNBinaryView) -> Ref<Self> {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn ref_from_raw(handle: *mut BNBinaryView) -> Ref<Self> {
         debug_assert!(!handle.is_null());
 
         Ref::new(Self { handle })

@@ -51,7 +51,7 @@ where
     {
         ffi_wrap!("BinaryViewTypeBase::is_valid_for", unsafe {
             let view_type = &*(ctxt as *mut T);
-            let data = BinaryView::from_raw(BNNewViewReference(data));
+            let data = BinaryView::ref_from_raw(BNNewViewReference(data));
 
             view_type.is_valid_for(&data)
         })
@@ -73,7 +73,7 @@ where
     {
         ffi_wrap!("BinaryViewTypeBase::create", unsafe {
             let view_type = &*(ctxt as *mut T);
-            let data = BinaryView::from_raw(BNNewViewReference(data));
+            let data = BinaryView::ref_from_raw(BNNewViewReference(data));
 
             let builder = CustomViewBuilder {
                 view_type,
@@ -107,7 +107,7 @@ where
     {
         ffi_wrap!("BinaryViewTypeBase::load_settings", unsafe {
             let view_type = &*(ctxt as *mut T);
-            let data = BinaryView::from_raw(BNNewViewReference(data));
+            let data = BinaryView::ref_from_raw(BNNewViewReference(data));
 
             match view_type.load_settings_for_data(&data) {
                 Ok(settings) => Ref::into_raw(settings).handle,
@@ -214,7 +214,7 @@ pub trait BinaryViewTypeExt: BinaryViewTypeBase {
             return Err(());
         }
 
-        unsafe { Ok(BinaryView::from_raw(handle)) }
+        unsafe { Ok(BinaryView::ref_from_raw(handle)) }
     }
 }
 
@@ -426,7 +426,7 @@ impl<'a, T: CustomBinaryViewType> CustomViewBuilder<'a, T> {
         {
             ffi_wrap!("BinaryViewBase::init", unsafe {
                 let context = &mut *(ctxt as *mut CustomViewContext<V>);
-                let handle = BinaryView::from_raw(context.raw_handle);
+                let handle = BinaryView::ref_from_raw(context.raw_handle);
 
                 match V::new(handle.as_ref(), &context.args) {
                     Ok(v) => {
@@ -792,7 +792,7 @@ impl<'a, T: CustomBinaryViewType> CustomViewBuilder<'a, T> {
             (*ctxt).raw_handle = res;
 
             Ok(CustomView {
-                handle: BinaryView::from_raw(res),
+                handle: BinaryView::ref_from_raw(res),
                 _builder: PhantomData,
             })
         }

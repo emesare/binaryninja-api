@@ -433,7 +433,11 @@ unsafe impl<A: Architecture> Send for CallingConvention<A> {}
 unsafe impl<A: Architecture> Sync for CallingConvention<A> {}
 
 impl<A: Architecture> CallingConvention<A> {
-    pub(crate) unsafe fn ref_from_raw(
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn ref_from_raw(
         handle: *mut BNCallingConvention,
         arch: A::Handle,
     ) -> Ref<Self> {
@@ -461,7 +465,7 @@ impl<A: Architecture> CallingConvention<A> {
         }
         for (parameter, raw_name) in params.iter().zip(name_strings.iter_mut()) {
             let location = match &parameter.location {
-                Some(location) => location.raw(),
+                Some(location) => location.into(),
                 None => unsafe { mem::zeroed() },
             };
             bn_params.push(BNFunctionParameter {

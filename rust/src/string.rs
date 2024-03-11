@@ -25,11 +25,11 @@ use std::os::raw;
 use crate::rc::*;
 use crate::types::QualifiedName;
 
-pub(crate) fn raw_to_string(ptr: *const raw::c_char) -> Option<String> {
+pub unsafe fn raw_to_string(ptr: *const raw::c_char) -> Option<String> {
     if ptr.is_null() {
         None
     } else {
-        Some(unsafe { CStr::from_ptr(ptr).to_string_lossy().into_owned() })
+        Some(CStr::from_ptr(ptr).to_string_lossy().into_owned())
     }
 }
 
@@ -42,7 +42,11 @@ pub struct BnStr {
 }
 
 impl BnStr {
-    pub(crate) unsafe fn from_raw<'a>(ptr: *const raw::c_char) -> &'a Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw<'a>(ptr: *const raw::c_char) -> &'a Self {
         mem::transmute(CStr::from_ptr(ptr).to_bytes_with_nul())
     }
 
@@ -117,11 +121,19 @@ impl BnString {
     }
 
     /// Construct a BnString from an owned const char* allocated by BNAllocString
-    pub(crate) unsafe fn from_raw(raw: *mut raw::c_char) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(raw: *mut raw::c_char) -> Self {
         Self { raw }
     }
 
-    pub(crate) fn into_raw(self) -> *mut raw::c_char {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn into_raw(self) -> *mut raw::c_char {
         let res = self.raw;
 
         // we're surrendering ownership over the *mut c_char to

@@ -66,7 +66,11 @@ pub struct Section {
 }
 
 impl Section {
-    pub(crate) unsafe fn from_raw(raw: *mut BNSection) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(raw: *mut BNSection) -> Self {
         Self { handle: raw }
     }
 

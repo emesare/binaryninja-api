@@ -997,12 +997,12 @@ impl ConstData {
     }
     pub fn constant_data(&self) -> ConstantData {
         let register_value = RegisterValue {
-            state: RegisterValueType::from_raw_value(self.constant_data.0).unwrap(),
+            state: unsafe { RegisterValueType::from_raw_value(self.constant_data.0).unwrap() },
             value: self.constant_data.1 as i64,
             offset: 0,
             size: self.constant_data.2,
         };
-        ConstantData::new(self.function.get_function(), register_value)
+        unsafe { ConstantData::new(self.function.get_function(), register_value) }
     }
     pub fn lift(&self) -> LiftedConstantData {
         LiftedConstantData {

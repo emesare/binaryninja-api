@@ -23,10 +23,18 @@ use std::slice;
 pub struct DataBuffer(*mut BNDataBuffer);
 
 impl DataBuffer {
-    pub(crate) fn from_raw(raw: *mut BNDataBuffer) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(raw: *mut BNDataBuffer) -> Self {
         DataBuffer(raw)
     }
-    pub(crate) fn as_raw(&self) -> *mut BNDataBuffer {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn as_raw(&self) -> *mut BNDataBuffer {
         self.0
     }
 
@@ -66,7 +74,7 @@ impl DataBuffer {
         if buffer.is_null() {
             Err(())
         } else {
-            Ok(DataBuffer::from_raw(buffer))
+            Ok(unsafe { DataBuffer::from_raw(buffer) })
         }
     }
 }
@@ -74,7 +82,7 @@ impl DataBuffer {
 // TODO : delete this
 impl Default for DataBuffer {
     fn default() -> Self {
-        DataBuffer::from_raw(ptr::null_mut())
+        unsafe { DataBuffer::from_raw(ptr::null_mut()) }
     }
 }
 
@@ -90,6 +98,6 @@ impl Drop for DataBuffer {
 
 impl Clone for DataBuffer {
     fn clone(&self) -> Self {
-        Self::from_raw(unsafe { BNDuplicateDataBuffer(self.0) })
+        unsafe { Self::from_raw(BNDuplicateDataBuffer(self.0) ) }
     }
 }

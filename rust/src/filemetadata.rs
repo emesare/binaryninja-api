@@ -57,8 +57,12 @@ unsafe impl Send for FileMetadata {}
 unsafe impl Sync for FileMetadata {}
 
 impl FileMetadata {
-    pub(crate) fn from_raw(handle: *mut BNFileMetadata) -> Self {
-        Self { handle }
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn ref_from_raw(handle: *mut BNFileMetadata) -> Ref<Self> {
+        Ref::new(Self { handle })
     }
 
     pub fn new() -> Ref<Self> {
@@ -199,7 +203,7 @@ impl FileMetadata {
             if res.is_null() {
                 Err(())
             } else {
-                Ok(BinaryView::from_raw(res))
+                Ok(BinaryView::ref_from_raw(res))
             }
         }
     }
@@ -239,7 +243,7 @@ impl FileMetadata {
             if bv.is_null() {
                 Err(())
             } else {
-                Ok(BinaryView::from_raw(bv))
+                Ok(BinaryView::ref_from_raw(bv))
             }
         }
     }
@@ -259,7 +263,7 @@ impl FileMetadata {
         if view.is_null() {
             Err(())
         } else {
-            Ok(unsafe { BinaryView::from_raw(view) })
+            Ok(unsafe { BinaryView::ref_from_raw(view) })
         }
     }
 }

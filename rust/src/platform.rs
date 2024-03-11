@@ -66,7 +66,11 @@ macro_rules! cc_func {
 }
 
 impl Platform {
-    pub(crate) unsafe fn ref_from_raw(handle: *mut BNPlatform) -> Ref<Self> {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn ref_from_raw(handle: *mut BNPlatform) -> Ref<Self> {
         debug_assert!(!handle.is_null());
 
         Ref::new(Self { handle })

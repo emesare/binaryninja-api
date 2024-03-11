@@ -122,7 +122,11 @@ unsafe impl Send for Function {}
 unsafe impl Sync for Function {}
 
 impl Function {
-    pub(crate) unsafe fn from_raw(handle: *mut BNFunction) -> Ref<Self> {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(handle: *mut BNFunction) -> Ref<Self> {
         Ref::new(Self { handle })
     }
 
@@ -143,7 +147,7 @@ impl Function {
     pub fn view(&self) -> Ref<BinaryView> {
         unsafe {
             let view = BNGetFunctionData(self.handle);
-            BinaryView::from_raw(view)
+            BinaryView::ref_from_raw(view)
         }
     }
 
@@ -234,7 +238,7 @@ impl Function {
 
     pub fn get_variable_name(&self, var: &Variable) -> BnString {
         unsafe {
-            let raw_var = var.raw();
+            let raw_var = var.into();
             let raw_name = BNGetVariableName(self.handle, &raw_var);
             BnString::from_raw(raw_name)
         }

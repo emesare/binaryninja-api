@@ -1000,7 +1000,7 @@ impl Intrinsic for crate::architecture::CoreIntrinsic {
 
             let ret = slice::from_raw_parts_mut(inputs, count)
                 .iter()
-                .map(NameAndType::from_raw)
+                .map(|i| NameAndType::from_raw(i))
                 .collect();
 
             BNFreeNameAndTypeList(inputs, count);
@@ -1045,13 +1045,17 @@ impl Drop for CoreArchitectureList {
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
-pub struct CoreArchitecture(pub(crate) *mut BNArchitecture);
+pub struct CoreArchitecture(pub *mut BNArchitecture);
 
 unsafe impl Send for CoreArchitecture {}
 unsafe impl Sync for CoreArchitecture {}
 
 impl CoreArchitecture {
-    pub(crate) unsafe fn from_raw(raw: *mut BNArchitecture) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(raw: *mut BNArchitecture) -> Self {
         CoreArchitecture(raw)
     }
 
@@ -1172,7 +1176,7 @@ impl Architecture for CoreArchitecture {
             }
         }
     }
-    
+
     fn instruction_llil(
         &self,
         data: &[u8],
@@ -1480,7 +1484,7 @@ impl Architecture for CoreArchitecture {
             )
         };
 
-        let error = raw_to_string(error_raw);
+        let error = unsafe { raw_to_string(error_raw) };
         unsafe {
             BNFreeString(error_raw);
         }
@@ -1868,8 +1872,8 @@ where
         let custom_arch = unsafe { &*(ctxt as *mut A) };
 
         match custom_arch.register_from_id(reg) {
-            Some(reg) => BnString::new(reg.name().as_ref()).into_raw(),
-            None => BnString::new("invalid_reg").into_raw(),
+            Some(reg) => unsafe { BnString::new(reg.name().as_ref()).into_raw() },
+            None => unsafe { BnString::new("invalid_reg").into_raw() },
         }
     }
 
@@ -1880,8 +1884,8 @@ where
         let custom_arch = unsafe { &*(ctxt as *mut A) };
 
         match custom_arch.flag_from_id(flag) {
-            Some(flag) => BnString::new(flag.name().as_ref()).into_raw(),
-            None => BnString::new("invalid_flag").into_raw(),
+            Some(flag) => unsafe { BnString::new(flag.name().as_ref()).into_raw() },
+            None => unsafe { BnString::new("invalid_flag").into_raw() },
         }
     }
 
@@ -1892,8 +1896,8 @@ where
         let custom_arch = unsafe { &*(ctxt as *mut A) };
 
         match custom_arch.flag_write_from_id(flag_write) {
-            Some(flag_write) => BnString::new(flag_write.name().as_ref()).into_raw(),
-            None => BnString::new("invalid_flag_write").into_raw(),
+            Some(flag_write) => unsafe { BnString::new(flag_write.name().as_ref()).into_raw() },
+            None => unsafe { BnString::new("invalid_flag_write").into_raw() },
         }
     }
 
@@ -1904,8 +1908,8 @@ where
         let custom_arch = unsafe { &*(ctxt as *mut A) };
 
         match custom_arch.flag_class_from_id(class) {
-            Some(class) => BnString::new(class.name().as_ref()).into_raw(),
-            None => BnString::new("invalid_flag_class").into_raw(),
+            Some(class) => unsafe { BnString::new(class.name().as_ref()).into_raw() },
+            None => unsafe { BnString::new("invalid_flag_class").into_raw() },
         }
     }
 
@@ -1916,8 +1920,8 @@ where
         let custom_arch = unsafe { &*(ctxt as *mut A) };
 
         match custom_arch.flag_group_from_id(group) {
-            Some(group) => BnString::new(group.name().as_ref()).into_raw(),
-            None => BnString::new("invalid_flag_group").into_raw(),
+            Some(group) => unsafe { BnString::new(group.name().as_ref()).into_raw() },
+            None => unsafe { BnString::new("invalid_flag_group").into_raw() },
         }
     }
 
@@ -2338,8 +2342,8 @@ where
         let custom_arch = unsafe { &*(ctxt as *mut A) };
 
         match custom_arch.register_stack_from_id(stack) {
-            Some(stack) => BnString::new(stack.name().as_ref()).into_raw(),
-            None => BnString::new("invalid_reg_stack").into_raw(),
+            Some(stack) => unsafe { BnString::new(stack.name().as_ref()).into_raw() },
+            None => unsafe { BnString::new("invalid_reg_stack").into_raw() },
         }
     }
 
@@ -2396,8 +2400,8 @@ where
     {
         let custom_arch = unsafe { &*(ctxt as *mut A) };
         match custom_arch.intrinsic_from_id(intrinsic) {
-            Some(intrinsic) => BnString::new(intrinsic.name().as_ref()).into_raw(),
-            None => BnString::new("invalid_intrinsic").into_raw(),
+            Some(intrinsic) => unsafe { BnString::new(intrinsic.name().as_ref()).into_raw() },
+            None => unsafe { BnString::new("invalid_intrinsic").into_raw() },
         }
     }
 
@@ -2424,7 +2428,7 @@ where
             let inputs = intrinsic.inputs();
             let mut res = Vec::with_capacity(inputs.len());
             for input in inputs {
-                res.push(input.into_raw());
+                res.push(unsafe { input.into_raw() });
             }
 
             unsafe {
@@ -2530,8 +2534,8 @@ where
         A: 'static + Architecture<Handle = CustomArchitectureHandle<A>> + Send + Sync,
     {
         let custom_arch = unsafe { &*(ctxt as *mut A) };
-        let code = raw_to_string(code).unwrap_or("".into());
-        let mut buffer = DataBuffer::from_raw(buffer);
+        let code = unsafe { raw_to_string(code).unwrap_or("".into()) };
+        let mut buffer = unsafe { DataBuffer::from_raw(buffer) };
 
         let result = match custom_arch.assemble(&code, addr) {
             Ok(result) => {

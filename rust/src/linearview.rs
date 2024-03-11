@@ -30,7 +30,11 @@ pub struct LinearViewObject {
 }
 
 impl LinearViewObject {
-    pub(crate) unsafe fn from_raw(handle: *mut BNLinearViewObject) -> Ref<Self> {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(handle: *mut BNLinearViewObject) -> Ref<Self> {
         debug_assert!(!handle.is_null());
 
         Ref::new(Self { handle })
@@ -237,7 +241,11 @@ pub struct LinearViewCursor {
 }
 
 impl LinearViewCursor {
-    pub(crate) unsafe fn from_raw(handle: *mut BNLinearViewCursor) -> Ref<Self> {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(handle: *mut BNLinearViewCursor) -> Ref<Self> {
         debug_assert!(!handle.is_null());
 
         Ref::new(Self { handle })
@@ -379,7 +387,11 @@ pub struct LinearDisassemblyLine {
 }
 
 impl LinearDisassemblyLine {
-    pub(crate) unsafe fn from_raw(raw: &BNLinearDisassemblyLine) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(raw: &BNLinearDisassemblyLine) -> Self {
         let linetype = raw.type_;
         let function = mem::ManuallyDrop::new(Function::from_raw(raw.function));
         let contents = mem::ManuallyDrop::new(DisassemblyTextLine(raw.contents));

@@ -116,7 +116,7 @@ pub trait BlockContext: Clone + Sync + Send + Sized {
 
 #[derive(PartialEq, Eq, Hash)]
 pub struct BasicBlock<C: BlockContext> {
-    pub(crate) handle: *mut BNBasicBlock,
+    pub handle: *mut BNBasicBlock,
     context: C,
 }
 
@@ -124,7 +124,11 @@ unsafe impl<C: BlockContext> Send for BasicBlock<C> {}
 unsafe impl<C: BlockContext> Sync for BasicBlock<C> {}
 
 impl<C: BlockContext> BasicBlock<C> {
-    pub(crate) unsafe fn from_raw(handle: *mut BNBasicBlock, context: C) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(handle: *mut BNBasicBlock, context: C) -> Self {
         Self { handle, context }
     }
 

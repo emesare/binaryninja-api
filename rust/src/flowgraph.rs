@@ -57,7 +57,11 @@ pub struct FlowGraphNode<'a> {
 }
 
 impl<'a> FlowGraphNode<'a> {
-    pub(crate) unsafe fn from_raw(raw: *mut BNFlowGraphNode) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(raw: *mut BNFlowGraphNode) -> Self {
         Self {
             handle: raw,
             _data: PhantomData,
@@ -122,7 +126,11 @@ pub struct FlowGraph {
 }
 
 impl FlowGraph {
-    pub(crate) unsafe fn from_raw(raw: *mut BNFlowGraph) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(raw: *mut BNFlowGraph) -> Self {
         Self { handle: raw }
     }
 

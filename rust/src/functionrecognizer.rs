@@ -47,7 +47,7 @@ where
         R: 'static + FunctionRecognizer + Send + Sync,
     {
         let custom_handler = unsafe { &*(ctxt as *mut R) };
-        let bv = unsafe { BinaryView::from_raw(BNNewViewReference(bv)) };
+        let bv = unsafe { BinaryView::ref_from_raw(BNNewViewReference(bv)) };
         let arch = unsafe { BNGetFunctionArchitecture(func) };
         let func = unsafe { Function::from_raw(BNNewFunctionReference(func)) };
         if arch.is_null() {
@@ -68,7 +68,7 @@ where
         R: 'static + FunctionRecognizer + Send + Sync,
     {
         let custom_handler = unsafe { &*(ctxt as *mut R) };
-        let bv = unsafe { BinaryView::from_raw(BNNewViewReference(bv)) };
+        let bv = unsafe { BinaryView::ref_from_raw(BNNewViewReference(bv)) };
         let func = unsafe { Function::from_raw(BNNewFunctionReference(func)) };
         let mlil = unsafe { mlil::MediumLevelILFunction::ref_from_raw(mlil) };
         custom_handler.recognize_medium_level_il(bv.as_ref(), func.as_ref(), &mlil)

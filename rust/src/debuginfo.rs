@@ -89,7 +89,11 @@ pub struct DebugInfoParser {
 }
 
 impl DebugInfoParser {
-    pub(crate) unsafe fn from_raw(handle: *mut BNDebugInfoParser) -> Ref<Self> {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(handle: *mut BNDebugInfoParser) -> Ref<Self> {
         debug_assert!(!handle.is_null());
 
         Ref::new(Self { handle })
@@ -190,7 +194,7 @@ impl DebugInfoParser {
         {
             ffi_wrap!("CustomDebugInfoParser::is_valid", unsafe {
                 let cmd = &*(ctxt as *const C);
-                let view = BinaryView::from_raw(view);
+                let view = BinaryView::ref_from_raw(view);
 
                 cmd.is_valid(&view)
             })
@@ -209,8 +213,8 @@ impl DebugInfoParser {
         {
             ffi_wrap!("CustomDebugInfoParser::parse_info", unsafe {
                 let cmd = &*(ctxt as *const C);
-                let view = BinaryView::from_raw(view);
-                let debug_file = BinaryView::from_raw(debug_file);
+                let view = BinaryView::ref_from_raw(view);
+                let debug_file = BinaryView::ref_from_raw(debug_file);
                 let mut debug_info = DebugInfo::from_raw(debug_info);
 
                 cmd.parse_info(
@@ -299,13 +303,13 @@ impl From<&BNDebugFunctionInfo> for DebugFunctionInfo {
     fn from(raw: &BNDebugFunctionInfo) -> Self {
         let components = unsafe { slice::from_raw_parts(raw.components, raw.componentN) }
             .iter()
-            .map(|component| raw_to_string(*component as *const _).unwrap())
+            .map(|component| unsafe { raw_to_string(*component as *const _).unwrap() })
             .collect();
 
         Self {
-            short_name: raw_to_string(raw.shortName),
-            full_name: raw_to_string(raw.fullName),
-            raw_name: raw_to_string(raw.rawName),
+            short_name: unsafe { raw_to_string(raw.shortName) },
+            full_name: unsafe { raw_to_string(raw.fullName) },
+            raw_name: unsafe { raw_to_string(raw.rawName) },
             type_: if raw.type_.is_null() {
                 None
             } else {
@@ -369,7 +373,11 @@ pub struct DebugInfo {
 }
 
 impl DebugInfo {
-    pub(crate) unsafe fn from_raw(handle: *mut BNDebugInfo) -> Ref<Self> {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(handle: *mut BNDebugInfo) -> Ref<Self> {
         debug_assert!(!handle.is_null());
 
         Ref::new(Self { handle })
@@ -390,7 +398,7 @@ impl DebugInfo {
         let result: Vec<NameAndType<String>> = unsafe {
             slice::from_raw_parts_mut(debug_types_ptr, count)
                 .iter()
-                .map(NameAndType::<String>::from_raw)
+                .map(|i| NameAndType::<String>::from_raw(i) )
                 .collect()
         };
 
@@ -405,7 +413,7 @@ impl DebugInfo {
         let result: Vec<NameAndType<String>> = unsafe {
             slice::from_raw_parts_mut(debug_types_ptr, count)
                 .iter()
-                .map(NameAndType::<String>::from_raw)
+                .map(|i| NameAndType::<String>::from_raw(i))
                 .collect()
         };
 
@@ -476,7 +484,7 @@ impl DebugInfo {
         let result: Vec<DataVariableAndName<String>> = unsafe {
             slice::from_raw_parts_mut(data_variables_ptr, count)
                 .iter()
-                .map(DataVariableAndName::<String>::from_raw)
+                .map(|i| DataVariableAndName::<String>::from_raw(i) )
                 .collect()
         };
 
@@ -493,7 +501,7 @@ impl DebugInfo {
         let result: Vec<DataVariableAndName<String>> = unsafe {
             slice::from_raw_parts_mut(data_variables_ptr, count)
                 .iter()
-                .map(DataVariableAndName::<String>::from_raw)
+                .map(|i| DataVariableAndName::<String>::from_raw(i) )
                 .collect()
         };
 

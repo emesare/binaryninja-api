@@ -220,11 +220,19 @@ pub struct Symbol {
 }
 
 impl Symbol {
-    pub(crate) unsafe fn ref_from_raw(raw: *mut BNSymbol) -> Ref<Self> {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn ref_from_raw(raw: *mut BNSymbol) -> Ref<Self> {
         Ref::new(Self { handle: raw })
     }
 
-    pub(crate) unsafe fn from_raw(raw: *mut BNSymbol) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(raw: *mut BNSymbol) -> Self {
         Self { handle: raw }
     }
 

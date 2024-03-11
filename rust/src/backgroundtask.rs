@@ -25,11 +25,15 @@ pub type Result<R> = result::Result<R, ()>;
 
 #[derive(PartialEq, Eq, Hash)]
 pub struct BackgroundTask {
-    pub(crate) handle: *mut BNBackgroundTask,
+    pub handle: *mut BNBackgroundTask,
 }
 
 impl BackgroundTask {
-    pub(crate) unsafe fn from_raw(handle: *mut BNBackgroundTask) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(handle: *mut BNBackgroundTask) -> Self {
         debug_assert!(!handle.is_null());
 
         Self { handle }

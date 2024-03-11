@@ -97,7 +97,11 @@ pub enum InstructionTextTokenContents {
 }
 
 impl InstructionTextToken {
-    pub(crate) unsafe fn from_raw(raw: &BNInstructionTextToken) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(raw: &BNInstructionTextToken) -> Self {
         Self(*raw)
     }
 
@@ -147,7 +151,7 @@ impl InstructionTextToken {
 
         InstructionTextToken(BNInstructionTextToken {
             type_,
-            text: text.into_raw(),
+            text: unsafe { text.into_raw() },
             value,
             width,
             size: 0,
@@ -242,7 +246,7 @@ impl Clone for InstructionTextToken {
             operand: self.0.operand,
             value: self.0.value,
             width: 0,
-            text: BnString::new(self.text()).into_raw(),
+            text: unsafe { BnString::new(self.text()).into_raw() },
             confidence: 0xff,
             typeNames: ptr::null_mut(),
             namesCount: 0,

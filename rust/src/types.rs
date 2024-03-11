@@ -318,7 +318,11 @@ impl TypeBuilder {
         unsafe { Self::from_raw(BNCreateTypeBuilderFromType(t.handle)) }
     }
 
-    pub(crate) unsafe fn from_raw(handle: *mut BNTypeBuilder) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(handle: *mut BNTypeBuilder) -> Self {
         debug_assert!(!handle.is_null());
         Self { handle }
     }
@@ -704,19 +708,27 @@ pub struct Type {
 
 /// ```
 /// use binaryninja::types::Type;
-/// let bv = unsafe { BinaryView::from_raw(view) };
+/// let bv = unsafe { BinaryView::ref_from_raw(view) };
 /// let my_custom_type_1 = Self::named_int(5, false, "my_w");
 /// let my_custom_type_2 = Self::int(5, false);
 /// bv.define_user_type("int_1", &my_custom_type_1);
 /// bv.define_user_type("int_2", &my_custom_type_2);
 /// ```
 impl Type {
-    unsafe fn from_raw(handle: *mut BNType) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(handle: *mut BNType) -> Self {
         debug_assert!(!handle.is_null());
         Self { handle }
     }
 
-    pub(crate) unsafe fn ref_from_raw(handle: *mut BNType) -> Ref<Self> {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn ref_from_raw(handle: *mut BNType) -> Ref<Self> {
         debug_assert!(!handle.is_null());
         Ref::new(Self { handle })
     }
@@ -1014,7 +1026,7 @@ impl Type {
         for parameter in parameters {
             let raw_name = parameter.name.clone().into_bytes_with_nul();
             let location = match &parameter.location {
-                Some(location) => location.raw(),
+                Some(location) => location.into(),
                 None => unsafe { mem::zeroed() },
             };
 
@@ -1086,7 +1098,7 @@ impl Type {
         for (name, parameter) in zip(name_ptrs, parameters) {
             let raw_name = name.into_bytes_with_nul();
             let location = match &parameter.location {
-                Some(location) => location.raw(),
+                Some(location) => location.into(),
                 None => unsafe { mem::zeroed() },
             };
 
@@ -1332,7 +1344,11 @@ impl<S: BnStrCompatible> FunctionParameter<S> {
 }
 
 impl FunctionParameter<BnString> {
-    pub(crate) fn from_raw(member: BNFunctionParameter) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(member: BNFunctionParameter) -> Self {
         let name: BnString = if member.name.is_null() {
             if member.location.type_ == BNVariableSourceType::RegisterVariableSourceType {
                 BnString::new(format!("reg_{}", member.location.storage))
@@ -1342,19 +1358,19 @@ impl FunctionParameter<BnString> {
                 BnString::new("")
             }
         } else {
-            BnString::new(unsafe { BnStr::from_raw(member.name) })
+            BnString::new(BnStr::from_raw(member.name))
         };
 
         Self {
             t: Conf::new(
-                unsafe { Type::ref_from_raw(BNNewTypeReference(member.type_)) },
+                Type::ref_from_raw(BNNewTypeReference(member.type_)),
                 member.typeConfidence,
             ),
             name,
             location: if member.defaultLocation {
                 None
             } else {
-                Some(unsafe { Variable::from_raw(member.location) })
+                Some(Variable::from_raw(member.location))
             },
         }
     }
@@ -1375,19 +1391,25 @@ impl Variable {
         Self { t, index, storage }
     }
 
-    pub(crate) unsafe fn from_raw(var: BNVariable) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(var: BNVariable) -> Self {
         Self {
             t: var.type_,
             index: var.index,
             storage: var.storage,
         }
     }
+}
 
-    pub(crate) fn raw(&self) -> BNVariable {
-        BNVariable {
-            type_: self.t,
-            index: self.index,
-            storage: self.storage,
+impl From<&Variable> for BNVariable {
+    fn from(t: &Variable) -> Self {
+        Self {
+            type_: t.t,
+            index: t.index,
+            storage: t.storage,
         }
     }
 }
@@ -1484,7 +1506,11 @@ impl EnumerationMember {
         }
     }
 
-    pub(crate) unsafe fn from_raw(member: BNEnumerationMember) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(member: BNEnumerationMember) -> Self {
         Self {
             name: BnString::new(raw_to_string(member.name).unwrap()),
             value: member.value,
@@ -1505,7 +1531,11 @@ impl EnumerationBuilder {
         }
     }
 
-    pub(crate) unsafe fn from_raw(handle: *mut BNEnumerationBuilder) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(handle: *mut BNEnumerationBuilder) -> Self {
         Self { handle }
     }
 
@@ -1593,7 +1623,11 @@ pub struct Enumeration {
 }
 
 impl Enumeration {
-    pub(crate) unsafe fn ref_from_raw(handle: *mut BNEnumeration) -> Ref<Self> {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn ref_from_raw(handle: *mut BNEnumeration) -> Ref<Self> {
         debug_assert!(!handle.is_null());
         Ref::new(Self { handle })
     }
@@ -1667,7 +1701,7 @@ pub struct StructureBuilder {
 /// let my_custom_structure_type = Self::structure_type(&mut my_custom_struct);
 ///
 /// // Add the struct to the binary view to use in analysis
-/// let bv = unsafe { BinaryView::from_raw(view) };
+/// let bv = unsafe { BinaryView::ref_from_raw(view) };
 /// bv.define_user_type("my_custom_struct", &my_custom_structure_type);
 /// ```
 impl StructureBuilder {
@@ -1677,7 +1711,11 @@ impl StructureBuilder {
         }
     }
 
-    pub(crate) unsafe fn from_raw(handle: *mut BNStructureBuilder) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(handle: *mut BNStructureBuilder) -> Self {
         debug_assert!(!handle.is_null());
         Self { handle }
     }
@@ -1911,12 +1949,20 @@ pub struct Structure {
 }
 
 impl Structure {
-    unsafe fn from_raw(handle: *mut BNStructure) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub fn from_raw(handle: *mut BNStructure) -> Self {
         debug_assert!(!handle.is_null());
         Self { handle }
     }
 
-    pub(crate) unsafe fn ref_from_raw(handle: *mut BNStructure) -> Ref<Self> {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn ref_from_raw(handle: *mut BNStructure) -> Ref<Self> {
         debug_assert!(!handle.is_null());
         Ref::new(Self { handle })
     }
@@ -2033,7 +2079,11 @@ impl StructureMember {
         }
     }
 
-    pub(crate) unsafe fn from_raw(handle: BNStructureMember) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(handle: BNStructureMember) -> Self {
         Self {
             ty: Conf::new(
                 RefCountable::inc_ref(&Type::from_raw(handle.type_)),
@@ -2070,7 +2120,11 @@ impl InheritedStructureMember {
         }
     }
 
-    // pub(crate) unsafe fn from_raw(handle: BNInheritedStructureMember) -> Self {
+    // Users should not instantiate these objects directly.
+    // If you find yourself using this because we don't
+    // support a specific API you'd like to use, we would
+    // appreciate it if you would file a PR instead.
+    // pub unsafe fn from_raw(handle: BNInheritedStructureMember) -> Self {
     //     Self {
     //         base: RefCountable::inc_ref(&NamedTypeReference::from_raw(handle.base)),
     //         base_offset: handle.baseOffset,
@@ -2092,7 +2146,11 @@ impl BaseStructure {
         Self { ty, offset, width }
     }
 
-    pub(crate) unsafe fn from_raw(handle: BNBaseStructure) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(handle: BNBaseStructure) -> Self {
         Self {
             ty: RefCountable::inc_ref(&NamedTypeReference::from_raw(handle.type_)),
             offset: handle.offset,
@@ -2110,13 +2168,21 @@ pub struct NamedTypeReference {
 }
 
 impl NamedTypeReference {
-    pub(crate) unsafe fn from_raw(handle: *mut BNNamedTypeReference) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(handle: *mut BNNamedTypeReference) -> Self {
         debug_assert!(!handle.is_null());
 
         Self { handle }
     }
 
-    pub(crate) unsafe fn ref_from_raw(handle: *mut BNNamedTypeReference) -> Ref<Self> {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn ref_from_raw(handle: *mut BNNamedTypeReference) -> Ref<Self> {
         debug_assert!(!handle.is_null());
         Ref::new(Self { handle })
     }
@@ -2267,7 +2333,7 @@ impl<S: BnStrCompatible> From<S> for QualifiedName {
 
         QualifiedName(BNQualifiedName {
             name: unsafe { BNAllocStringList(list.as_mut_ptr(), 1) },
-            join: join.into_raw(),
+            join: unsafe { join.into_raw() },
             nameCount: 1,
         })
     }
@@ -2287,7 +2353,7 @@ impl<S: BnStrCompatible> From<Vec<S>> for QualifiedName {
 
         QualifiedName(BNQualifiedName {
             name: unsafe { BNAllocStringList(list.as_mut_ptr(), list.len()) },
-            join: join.into_raw(),
+            join: unsafe { join.into_raw() },
             nameCount: list.len(),
         })
     }
@@ -2451,10 +2517,14 @@ pub struct NameAndType<S: BnStrCompatible> {
 }
 
 impl NameAndType<String> {
-    pub(crate) fn from_raw(raw: &BNNameAndType) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(raw: &BNNameAndType) -> Self {
         Self::new(
             raw_to_string(raw.name).unwrap(),
-            unsafe { &Type::ref_from_raw(raw.type_) },
+            &Type::ref_from_raw(raw.type_),
             raw.typeConfidence,
         )
     }
@@ -2468,7 +2538,11 @@ impl<S: BnStrCompatible> NameAndType<S> {
         }
     }
 
-    pub(crate) fn into_raw(self) -> BNNameAndType {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn into_raw(self) -> BNNameAndType {
         let t = self.t.clone();
         let res = BNNameAndType {
             name: BnString::new(self.name).into_raw(),
@@ -2513,10 +2587,14 @@ pub struct DataVariable {
 }
 
 // impl DataVariable {
-//     pub(crate) fn from_raw(var: &BNDataVariable) -> Self {
+//     /// Users should not instantiate these objects directly.
+//     /// If you find yourself using this because we don't
+//     /// support a specific API you'd like to use, we would
+//     /// appreciate it if you would file a PR instead.
+//     pub unsafe fn from_raw(var: &BNDataVariable) -> Self {
 //         Self {
 //             address: var.address,
-//             t: Conf::new(unsafe { Type::ref_from_raw(var.type_) }, var.typeConfidence),
+//             t: Conf::new(Type::ref_from_raw(var.type_), var.typeConfidence),
 //             auto_discovered: var.autoDiscovered,
 //         }
 //     }
@@ -2561,7 +2639,11 @@ pub struct DataVariableAndName<S: BnStrCompatible> {
 }
 
 impl DataVariableAndName<String> {
-    pub(crate) fn from_raw(var: &BNDataVariableAndName) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(var: &BNDataVariableAndName) -> Self {
         Self {
             address: var.address,
             t: Conf::new(unsafe { Type::ref_from_raw(var.type_) }, var.typeConfidence),
@@ -2634,7 +2716,11 @@ pub enum RegisterValueType {
 }
 
 impl RegisterValueType {
-    pub(crate) fn from_raw_value(value: u32) -> Option<Self> {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw_value(value: u32) -> Option<Self> {
         use BNRegisterValueType::*;
         Some(match value {
             x if x == UndeterminedValue as u32 => Self::UndeterminedValue,
@@ -2658,7 +2744,11 @@ impl RegisterValueType {
         })
     }
 
-    pub(crate) fn into_raw_value(self) -> BNRegisterValueType {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn into_raw_value(self) -> BNRegisterValueType {
         use BNRegisterValueType::*;
         match self {
             Self::UndeterminedValue => UndeterminedValue,
@@ -2707,7 +2797,7 @@ impl RegisterValue {
 impl From<BNRegisterValue> for RegisterValue {
     fn from(value: BNRegisterValue) -> Self {
         Self {
-            state: RegisterValueType::from_raw_value(value.state as u32).unwrap(),
+            state: unsafe { RegisterValueType::from_raw_value(value.state as u32).unwrap() },
             value: value.value,
             offset: value.offset,
             size: value.size,
@@ -2718,7 +2808,7 @@ impl From<BNRegisterValue> for RegisterValue {
 impl From<RegisterValue> for BNRegisterValue {
     fn from(value: RegisterValue) -> Self {
         Self {
-            state: value.state.into_raw_value(),
+            state: unsafe { value.state.into_raw_value() },
             value: value.value,
             offset: value.offset,
             size: value.size,
@@ -2736,7 +2826,11 @@ pub struct ConstantData {
 }
 
 impl ConstantData {
-    pub(crate) fn new(function: Ref<Function>, value: RegisterValue) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn new(function: Ref<Function>, value: RegisterValue) -> Self {
         Self { function, value }
     }
 }

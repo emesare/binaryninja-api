@@ -49,11 +49,19 @@ pub struct Ref<T: RefCountable> {
 
 impl<T: RefCountable> Ref<T> {
     /// Safety: You need to make sure wherever you got the contents from incremented the ref count already. Anywhere the core passes out an object to the API does this.
-    pub(crate) unsafe fn new(contents: T) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn new(contents: T) -> Self {
         Self { contents }
     }
 
-    pub(crate) unsafe fn into_raw(obj: Self) -> T {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn into_raw(obj: Self) -> T {
         let res = ptr::read(&obj.contents);
 
         mem::forget(obj);
@@ -143,7 +151,11 @@ pub struct Guard<'a, T> {
 }
 
 impl<'a, T> Guard<'a, T> {
-    pub(crate) unsafe fn new<O: 'a>(contents: T, _owner: &O) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn new<O: 'a>(contents: T, _owner: &O) -> Self {
         Self {
             contents,
             _guard: PhantomData,
@@ -226,7 +238,11 @@ where
 }
 
 impl<P: CoreOwnedArrayProvider> Array<P> {
-    pub(crate) unsafe fn new(raw: *mut P::Raw, count: usize, context: P::Context) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn new(raw: *mut P::Raw, count: usize, context: P::Context) -> Self {
         Self {
             contents: raw,
             count,
@@ -304,7 +320,11 @@ where
 }
 
 impl<P: CoreArrayProvider> ArrayGuard<P> {
-    pub(crate) unsafe fn new(raw: *mut P::Raw, count: usize, context: P::Context) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn new(raw: *mut P::Raw, count: usize, context: P::Context) -> Self {
         Self {
             contents: raw,
             count,

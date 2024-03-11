@@ -14,13 +14,21 @@ pub struct Metadata {
 }
 
 impl Metadata {
-    pub(crate) unsafe fn from_raw(handle: *mut BNMetadata) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(handle: *mut BNMetadata) -> Self {
         debug_assert!(!handle.is_null());
 
         Self { handle }
     }
 
-    pub(crate) unsafe fn ref_from_raw(handle: *mut BNMetadata) -> Ref<Self> {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn ref_from_raw(handle: *mut BNMetadata) -> Ref<Self> {
         Ref::new(Self::from_raw(handle))
     }
 

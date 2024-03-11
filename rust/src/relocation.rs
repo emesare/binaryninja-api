@@ -125,7 +125,11 @@ impl RelocationInfo {
         }
     }
 
-    pub(crate) fn from_raw(reloc: &BNRelocationInfo) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(reloc: &BNRelocationInfo) -> Self {
         RelocationInfo {
             type_: reloc.type_.into(),
             pc_relative: reloc.pcRelative,
@@ -147,7 +151,11 @@ impl RelocationInfo {
         }
     }
 
-    pub(crate) fn as_raw(&self) -> BNRelocationInfo {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn as_raw(&self) -> BNRelocationInfo {
         BNRelocationInfo {
             type_: self.type_.into(),
             pcRelative: self.pc_relative,
@@ -181,12 +189,16 @@ impl Default for RelocationInfo {
 pub struct Relocation(*mut BNRelocation);
 
 impl Relocation {
-    pub(crate) unsafe fn from_raw(reloc: *mut BNRelocation) -> Self {
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn from_raw(reloc: *mut BNRelocation) -> Self {
         Relocation(reloc)
     }
 
     pub fn info(&self) -> RelocationInfo {
-        RelocationInfo::from_raw(unsafe { &BNRelocationGetInfo(self.0) })
+        unsafe { RelocationInfo::from_raw( &BNRelocationGetInfo(self.0) ) }
     }
 
     pub fn architecture(&self) -> Option<CoreArchitecture> {
@@ -299,8 +311,12 @@ unsafe impl Send for CoreRelocationHandler {}
 unsafe impl Sync for CoreRelocationHandler {}
 
 impl CoreRelocationHandler {
-    pub(crate) unsafe fn ref_from_raw(raw: *mut BNRelocationHandler) -> Ref<Self> {
-        unsafe { Ref::new(CoreRelocationHandler(raw)) }
+    /// Users should not instantiate these objects directly.
+    /// If you find yourself using this because we don't
+    /// support a specific API you'd like to use, we would
+    /// appreciate it if you would file a PR instead.
+    pub unsafe fn ref_from_raw(raw: *mut BNRelocationHandler) -> Ref<Self> {
+        Ref::new(CoreRelocationHandler(raw))
     }
 }
 
@@ -319,7 +335,7 @@ impl RelocationHandler for CoreRelocationHandler {
         arch: &CoreArchitecture,
         info: &mut [RelocationInfo],
     ) -> bool {
-        let mut raw_info = info.iter().map(|i| i.as_raw()).collect::<Vec<_>>();
+        let mut raw_info = info.iter().map(|i| unsafe { i.as_raw() }).collect::<Vec<_>>();
         let res = unsafe {
             BNRelocationHandlerGetRelocationInfo(
                 self.0,
@@ -330,7 +346,7 @@ impl RelocationHandler for CoreRelocationHandler {
             )
         };
         for (info, raw) in info.iter_mut().zip(raw_info.iter()) {
-            *info = RelocationInfo::from_raw(raw);
+            *info = unsafe { RelocationInfo::from_raw(raw) };
         }
         res
     }
@@ -431,17 +447,17 @@ where
         R: 'static + RelocationHandler<Handle = CustomRelocationHandlerHandle<R>> + Send + Sync,
     {
         let custom_handler = unsafe { &*(ctxt as *mut R) };
-        let bv = unsafe { BinaryView::from_raw(BNNewViewReference(bv)) };
+        let bv = unsafe { BinaryView::ref_from_raw(BNNewViewReference(bv)) };
         let arch = unsafe { CoreArchitecture::from_raw(arch) };
         let result = unsafe { core::slice::from_raw_parts_mut(result, count) };
         let mut info = result
             .iter()
-            .map(RelocationInfo::from_raw)
+            .map(|i| unsafe{RelocationInfo::from_raw(i)})
             .collect::<Vec<_>>();
         let ok =
             custom_handler.get_relocation_info(bv.as_ref(), arch.as_ref(), info.as_mut_slice());
         for (result, info) in result.iter_mut().zip(info.iter()) {
-            *result = info.as_raw();
+            *result = unsafe { info.as_raw() };
         }
         ok
     }
@@ -458,7 +474,7 @@ where
         R: 'static + RelocationHandler<Handle = CustomRelocationHandlerHandle<R>> + Send + Sync,
     {
         let custom_handler = unsafe { &*(ctxt as *mut R) };
-        let bv = unsafe { BinaryView::from_raw(BNNewViewReference(bv)) };
+        let bv = unsafe { BinaryView::ref_from_raw(BNNewViewReference(bv)) };
         let arch = unsafe { CoreArchitecture::from_raw(arch) };
         let reloc = unsafe { Relocation::from_raw(reloc) };
         let dest = unsafe { core::slice::from_raw_parts_mut(dest, len) };

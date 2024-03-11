@@ -212,7 +212,7 @@ pub fn load<S: BnStrCompatible>(filename: S) -> Option<rc::Ref<binaryview::Binar
     if handle.is_null() {
         None
     } else {
-        Some(unsafe { BinaryView::from_raw(handle) })
+        Some(unsafe { BinaryView::ref_from_raw(handle) })
     }
 }
 
@@ -249,7 +249,7 @@ pub fn load_with_options<S: BnStrCompatible>(
     if handle.is_null() {
         None
     } else {
-        Some(unsafe { BinaryView::from_raw(handle) })
+        Some(unsafe { BinaryView::ref_from_raw(handle) })
     }
 }
 

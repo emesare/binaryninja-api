@@ -217,7 +217,7 @@ fn get_constant_data(
     value: u64,
     size: usize,
 ) -> types::ConstantData {
-    types::ConstantData::new(
+    unsafe { types::ConstantData::new(
         function.get_function(),
         RegisterValue::new(
             RegisterValueType::from_raw_value(state as u32).unwrap(),
@@ -225,7 +225,7 @@ fn get_constant_data(
             0,
             size,
         ),
-    )
+    ) }
 }
 
 fn get_intrinsic(function: &MediumLevelILFunction, idx: u32) -> ILIntrinsic {
